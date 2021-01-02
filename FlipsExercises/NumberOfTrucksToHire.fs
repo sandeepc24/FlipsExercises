@@ -3,6 +3,7 @@
 open FSharp.Data.UnitSystems.SI
 open Flips
 open Flips.Types
+open Flips.SliceMap
 
 // https://www.superprof.co.uk/resources/academic/maths/linear-algebra/linear-programming/linear-programming-problems-and-solutions.html
 (*
@@ -19,20 +20,43 @@ open Flips.Types
 
 type TruckType = TruckType of string
 
+[<Measure>] type NZD
+[<Measure>] type PerKm
 [<Measure>] type m3 = UnitNames.meter^3
 type CapacityType = | Refrigerated of float<m3> | NonRefrigerated of float<m3>
 
+type Truck = Truck of string
+
+// Parameters.
+let truckTypes = [ "TypeA"; "TypeB" ]
+let truckCostPerKm = [ ("TypeA", 30.); ("TypeB", 40.)] |> SMap
+let refrigeratedCapacity = [ ("TypeA", 20.); ("TypeB", 30.)] |> SMap
+let nonRefrigeratedCapacity = [ ("TypeA", 40.); ("TypeB", 30.)] |> SMap
+
 // Decision vars.
-let typeATrucks = Decision.createContinuous "typeATrucks" 0. infinity
-let typeBTrucks = Decision.createContinuous "typeBTrucks" 0. infinity
+let truckTypesToSelect = 
+    [
+        for x in truckTypes -> x, Decision.createContinuous x 0. infinity
+    ] |> SMap
 
 // Objective expression.
-let objectiveExpression = 30. * typeATrucks + 40. * typeBTrucks
+let objectiveExpression = sum (truckCostPerKm .* truckTypesToSelect)
 let objective = Objective.create "MinimizeTransportCost" Minimize objectiveExpression
 
 // Constraint.
-let refrigeratedStock = Constraint.create "refrigeratedStock" (20. * typeATrucks + 30. * typeBTrucks == 3000.)
-let nonRefrigeratedStock = Constraint.create "nonRefrigeratedStock" (40. * typeATrucks + 30. * typeBTrucks == 4000.)
+let refrigeratedStockExpr = 
+    [
+        for KeyValue(x, decVar) in truckTypesToSelect ->
+            refrigeratedCapacity.[x] * decVar
+    ] |> List.sum
+let refrigeratedStock = Constraint.create "refrigeratedStock" (refrigeratedStockExpr >== 3000.)
+
+let nonRefrigeratedStockExpr = 
+    [
+        for KeyValue(x, decVar) in truckTypesToSelect ->
+            nonRefrigeratedCapacity.[x] * decVar
+    ] |> List.sum
+let nonRefrigeratedStock = Constraint.create "nonRefrigeratedStock" (nonRefrigeratedStockExpr >== 4000.)
 
 let model =
     Model.create objective
