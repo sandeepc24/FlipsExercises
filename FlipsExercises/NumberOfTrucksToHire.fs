@@ -22,19 +22,19 @@ open Flips.UnitsOfMeasure
 type TruckType = TruckType of string
 
 [<Measure>] type NZD
-[<Measure>] type PerKm
-type CapacityType = | Refrigerated of float<m^3> | NonRefrigerated of float<m^3>
+[<Measure>] type km
+
 // Parameters.
 type TruckInfo = {
-    CostPerKm : float<NZD> 
+    CostPerKm : float<NZD/km> 
     RefrigeratedCapacity : float<m^3>
     NonRefrigeratedCapacity : float<m^3>
 }
 
 let truckTypeInfoList = 
     [ 
-        (TruckType "TypeA", { CostPerKm = 30.<NZD>; RefrigeratedCapacity = 20.<m^3>; NonRefrigeratedCapacity = 40.<m^3> })
-        (TruckType "TypeB", { CostPerKm = 40.<NZD>; RefrigeratedCapacity = 30.<m^3>; NonRefrigeratedCapacity = 30.<m^3> })
+        (TruckType "TypeA", { CostPerKm = 30.<NZD/km>; RefrigeratedCapacity = 20.<m^3>; NonRefrigeratedCapacity = 40.<m^3> })
+        (TruckType "TypeB", { CostPerKm = 40.<NZD/km>; RefrigeratedCapacity = 30.<m^3>; NonRefrigeratedCapacity = 30.<m^3> })
     ] 
 let truckTypeInfo = truckTypeInfoList |> SMap.ofList
 
@@ -48,28 +48,25 @@ let truckTypesToSelect =
 
 // Objective expression.
 let objectiveExpression = 
-    let truckInfo = truckTypeInfoList |> List.map (fun (x, y) -> x, y.CostPerKm) |> SMap.ofList
-    sum (truckInfo .* truckTypesToSelect)
+    let trucksCostPerKm = truckTypeInfoList |> List.map (fun (x, y) -> x, y.CostPerKm) |> SMap.ofList
+    sum (trucksCostPerKm .* truckTypesToSelect)
 let objective = Objective.create "MinimizeTransportCost" Minimize objectiveExpression
 
 // Constraints.
-let refrigeratedStockExpr = 
-    [
-        for KeyValue(x, decVar) in truckTypesToSelect ->
-            let truckInfo = truckTypeInfo.[x]
-            truckInfo.RefrigeratedCapacity * decVar
-    ] |> List.sum
-let refrigeratedStock = Constraint.create "refrigeratedStock" (refrigeratedStockExpr == 3000.<m^3>)
+let (refrigeratedStockExpr, nonRefrigeratedStockExpr) = 
+    let decisions =
+        [
+            for KeyValue(x, decVar) in truckTypesToSelect ->
+                let truckInfo = truckTypeInfo.[x]
+                (truckInfo.RefrigeratedCapacity * decVar), (truckInfo.NonRefrigeratedCapacity * decVar)
+        ] 
+    let (refrigeratedStock, nonRefrigeratedStock) = decisions |> List.unzip
+    (refrigeratedStock |> List.sum, nonRefrigeratedStock |> List.sum)
 
-let nonRefrigeratedStockExpr = 
-    [
-        for KeyValue(x, decVar) in truckTypesToSelect ->
-            let truckInfo = truckTypeInfo.[x]
-            truckInfo.NonRefrigeratedCapacity * decVar
-    ] |> List.sum
-let nonRefrigeratedStock = Constraint.create "nonRefrigeratedStock" (nonRefrigeratedStockExpr == 4000.<m^3>)
+let maxRefrigeratedStock = Constraint.create "refrigeratedStock" (refrigeratedStockExpr == 3000.<m^3>)
+let maxNonRefrigeratedStock = Constraint.create "nonRefrigeratedStock" (nonRefrigeratedStockExpr == 4000.<m^3>)
 
 let model =
     Model.create objective
-    |> Model.addConstraint refrigeratedStock
-    |> Model.addConstraint nonRefrigeratedStock
+    |> Model.addConstraint maxRefrigeratedStock
+    |> Model.addConstraint maxNonRefrigeratedStock
