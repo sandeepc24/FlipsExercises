@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FlipsExercises", "FlipsExercises\FlipsExercises.fsproj", "{894A9D41-0C7C-488F-8B2B-3CED5FC66868}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{894A9D41-0C7C-488F-8B2B-3CED5FC66868}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{894A9D41-0C7C-488F-8B2B-3CED5FC66868}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{894A9D41-0C7C-488F-8B2B-3CED5FC66868}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{894A9D41-0C7C-488F-8B2B-3CED5FC66868}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {88303645-17A7-4B97-B93C-C235E797AC7C}
+	EndGlobalSection
+EndGlobal

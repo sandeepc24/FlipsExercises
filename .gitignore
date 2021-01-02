@@ -3,3 +3,6 @@
 ################################################################################
 
 /.vs/FlipsExercises
+/.ionide
+/FlipsExercises/obj
+/FlipsExercises/bin/Debug/netcoreapp5.0

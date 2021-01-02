@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="NumberOfTrucksToHire.fs" />
+    <Compile Include="AirelineTickets.fs" />
+    <Compile Include="Gadgets.fs" />
+    <Compile Include="MaximizeIncome.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Flips" Version="2.4.4" />
+  </ItemGroup>
+
+</Project>
