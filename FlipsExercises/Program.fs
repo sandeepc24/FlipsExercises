@@ -19,6 +19,10 @@ let main argv =
     //printfn "%A" plan
     //let plan = Solver.solve settings Gadgets.Maps.model
     //printfn "%A" plan
-    let plan = Solver.solve settings NumberOfTrucksToHire.model
+    //let plan = Solver.solve settings NumberOfTrucksToHire.model
+    //let plan = Solver.solve settings FoodTruck.model
+    //let plan = Solver.solve settings Junk.model
+    //let plan = Solver.solve settings ToyStore.model
+    let plan = Solver.solve settings TableFactory.model
     printfn "%A" plan
     0 // return an integer exit code

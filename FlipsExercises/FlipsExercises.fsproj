@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="TableFactory.fs" />
+    <Compile Include="ToyStore.fs" />
+    <Compile Include="Test.fs" />
+    <Compile Include="FoodTruck.fs" />
     <Compile Include="Junk.fs" />
     <Compile Include="NumberOfTrucksToHire.fs" />
     <Compile Include="AirelineTickets.fs" />

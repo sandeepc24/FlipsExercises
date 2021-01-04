@@ -1,70 +1,60 @@
-﻿module Flips.Examples.FoodTruckUnitsOfMeasureExample
+﻿module Junk
 
+open FSharp.Data.UnitSystems.SI.UnitSymbols
 open Flips
 open Flips.Types
+open Flips.SliceMap
 open Flips.UnitsOfMeasure
 
-type [<Measure>] USD
-type [<Measure>] Item
-type [<Measure>] Lb
+[<Measure>] type NZD
+[<Measure>] type Item
 
-let solve settings =
+// Parameters.
+type ItemDetail = {
+    Profit : float<NZD/Item>
+    MaxNumber : float
+    Weight : float<kg>
+}
+let items = 
+    [
+        "Hamburger", { Profit = 1.50<NZD/Item>; MaxNumber = 300.; Weight = 0.5<kg> }
+        "HotDog", { Profit = 1.20<NZD/Item>; MaxNumber = 200.; Weight = 0.4<kg> }
+    ] |> SMap.ofList
+let maxTruckWeight = 200.<kg>
 
-    // Declare the parameters for our model
-    // This time include Units of Measure on the floats
-    let items = ["Hamburger"; "HotDog"]
-    let profit = Map.ofList [("Hamburger", 1.50<USD/Item>); ("HotDog", 1.20<USD/Item>)]
-    let maxIngredients = Map.ofList [("Hamburger", 300.0<Item>); ("HotDog", 200.0<Item>)]
-    let itemWeight = Map.ofList [("Hamburger", 0.5<Lb/Item>); ("HotDog", 0.4<Lb/Item>)]
-    let maxTruckWeight = 200.0<Lb>
+// Decision.
+let numberOfItems =
+    [
+        for KeyValue(item, itemDetail) in items ->
+            item, Decision.createContinuous $"NumberOf{item}" 0. infinity
+    ] |> SMap
 
-    // Create Decision Variable Map<string,Decision> to represent how much of each item we should pack
-    // with a Lower Bound of 0.0<Item> and an upper bound of 1_000_000.0<Item>
-    // The infinity value does not work with Units of Measure
-    let numberOfItem =
-        [for item in items do
-            item, Decision.createContinuous (sprintf "NumberOf%s" item) 0.0<Item> 1_000_000.0<Item>]
-        |> Map.ofList
+// Objective.
+let objective =
+    let objectiveExpression =
+        [
+            for KeyValue(item, itemDetail) in items ->
+                itemDetail.Profit * numberOfItems.[item]
+        ] |> List.sum
+    Objective.create "MaximizeProfit" Maximize objectiveExpression
 
-    // Create the Linear Expression for the objective
-    let x = [for item in items -> profit.[item] * numberOfItem.[item]]
-    let objectiveExpression = List.sum [for item in items -> profit.[item] * numberOfItem.[item]]
+// Constraint.
+let maxItems =
+    [
+        for KeyValue(item, itemDetail) in items ->
+            Constraint.create $"Max{item}" (numberOfItems.[item] <== itemDetail.MaxNumber)
+    ]
 
-    // Create an Objective with the name "MaximizeRevenue" the goal of Maximizing
-    // the Objective Expression
-    let objective = Objective.create "MaximizeRevenue" Maximize objectiveExpression
+let maxWeight =
+    let maxWeightExpr =
+        [
+            for KeyValue(item, itemDetail) in items ->
+                (numberOfItems.[item] * itemDetail.Weight)
+        ] |> List.sum
+    Constraint.create "MaxWeight" (maxWeightExpr <== maxTruckWeight)
     
-    // Create a Max Item Constraints using the `ConstraintBuilder` the first argument for the builder
-    // is the prefix used for naming the constraint. The second argument is the F# expression which
-    // it will use for generating the `ConstraintExpressions`
-    let maxItemConstraints = ConstraintBuilder "MaxItem" {
-        for item in items ->
-            numberOfItem.[item] <== maxIngredients.[item]
-    }
-
-    // Create a Constraint for the Max combined weight of Hamburgers and Hotdogs
-    let weightExpression = List.sum [for item in items -> itemWeight.[item] * numberOfItem.[item]]
-    let maxWeight = Constraint.create "MaxWeight" (weightExpression <== maxTruckWeight)
-
-    // Create a Model type and pipe it through the addition of the constraints
-    let model =
-        Model.create objective
-        |> Model.addConstraints maxItemConstraints
-        |> Model.addConstraint maxWeight
-
-    // Call the `solve` function in the Solve module to evaluate the model
-    let result = Solver.solve settings model
-
-    printfn "-- Result --"
-
-    // Match the result of the call to solve
-    // If the model could not be solved it will return a `Suboptimal` case with a message as to why
-    // If the model could be solved, it will print the value of the Objective Function and the
-    // values for the Decision Variables
-    match result with
-    | Optimal solution ->
-        printfn "Objective Value: %f" (Objective.evaluate solution objective)
-        for (decision, value) in solution.DecisionResults |> Map.toSeq do
-            printfn "Decision: %A\tValue: %f" decision.Name value
-    | errorCase -> 
-        printfn "Unable to solve. Error: %A" errorCase
+// Model.
+let model =
+    Model.create objective
+    |> Model.addConstraints maxItems
+    |> Model.addConstraint maxWeight
