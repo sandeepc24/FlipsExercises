@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="PCStore.fs" />
     <Compile Include="Fund.fs" />
     <Compile Include="AnimalFeed.fs" />
     <Compile Include="TableFactory.fs" />
